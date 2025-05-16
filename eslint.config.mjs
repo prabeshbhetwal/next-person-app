@@ -11,18 +11,25 @@ const compat = new FlatCompat({
 
 export default [
   // 1) Define ignored files first
-  {
-    ignores: [
+  {    ignores: [
+      // Ignore generated Prisma files
+      "lib/generated/**",
       // Adjust path as needed; for example if it's "components/ui/*.tsx":
       "components/ui/*.tsx",
     ],
   },
   // 2) Spread in core Next.js + TypeScript configs
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  // 3) Optionally override or add rules after
+  ...compat.extends("next/core-web-vitals", "next/typescript"),  // 3) Optionally override or add rules after
+  {
+    files: ["lib/prisma.ts"],
+    rules: {
+      "no-var": "off"
+    }
+  },
   {
     rules: {
-      // custom rules or overrides here
+      "no-var": "error",
+      "@typescript-eslint/no-unused-vars": ["error"]
     },
   },
 ];

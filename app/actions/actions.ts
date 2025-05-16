@@ -12,8 +12,7 @@ export const searchUsers = cache(async (query: string) => {
   if (!query) {
     return []
   }
-
-  return prisma.user.findMany({
+  const users = await prisma.user.findMany({
     where: {
       OR: [
         { name: { contains: query, mode: 'insensitive' } },
@@ -29,6 +28,13 @@ export const searchUsers = cache(async (query: string) => {
       phoneNumber: true,
     },
   })
+
+  return users.map(user => ({
+    ...user,
+    name: user.name ?? '',
+    email: user.email ?? '',
+    phoneNumber: user.phoneNumber ?? ''
+  }))
 })
 
 export async function addUser(data: Omit<User, 'id'>): Promise<{ success: boolean; data?: User; error?: string }> {
@@ -51,10 +57,24 @@ export async function addUser(data: Omit<User, 'id'>): Promise<{ success: boolea
         email: validatedUser.email,
         phoneNumber: validatedUser.phoneNumber,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
     })
     
     revalidatePath('/')
-    return { success: true, data: user }
+    return { 
+      success: true, 
+      data: {
+        ...user,
+        name: user.name ?? '',
+        email: user.email ?? '',
+        phoneNumber: user.phoneNumber ?? '',
+      }
+    }
   } catch (error) {
     return { 
       success: false, 
@@ -100,10 +120,24 @@ export async function updateUser(
     const user = await prisma.user.update({
       where: { id },
       data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+      },
     })
     
     revalidatePath('/')
-    return { success: true, data: user }
+    return { 
+      success: true, 
+      data: {
+        ...user,
+        name: user.name ?? '',
+        email: user.email ?? '',
+        phoneNumber: user.phoneNumber ?? '',
+      }
+    }
   } catch (error) {
     return { 
       success: false, 
@@ -113,5 +147,13 @@ export async function updateUser(
 }
 
 export const getUserById = cache(async (id: string) => {
-  return prisma.user.findUnique({ where: { id } })
+  const user = await prisma.user.findUnique({ where: { id } })
+  if (!user) return null
+
+  return {
+    ...user,
+    name: user.name ?? '',
+    email: user.email ?? '',
+    phoneNumber: user.phoneNumber ?? ''
+  }
 })

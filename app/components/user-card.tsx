@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -64,13 +65,16 @@ export default function UserCard({ user, onDelete, onUpdate }: UserCardProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">      <CardHeader className="flex flex-row items-center gap-4">
+    <Card className="w-full max-w-md mx-auto">      
+      <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="w-16 h-16">
           {user.picture ? (
-            <img 
+            <Image 
               src={user.picture} 
               alt={user.name}
               className="aspect-square h-full w-full object-cover"
+              width={64}
+              height={64}
             />
           ) : (
             <AvatarFallback>{user.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>

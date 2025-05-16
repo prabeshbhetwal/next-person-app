@@ -1,9 +1,22 @@
 {
-    "extends": ["next/core-web-vitals", "next/typescript"],
-    "ignorePatterns": ["components/ui/*.tsx"],
-    "rules": {
-      // You can add custom rules here if needed
-    }
-  }
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-unused-expressions": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "no-var": "error"
+  },
+  "ignorePatterns": [
+    "components/ui/*.tsx",
+    "node_modules/",
+    ".next/",
+    "lib/generated/**/*"
+  ]
+}
   
   

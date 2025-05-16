@@ -4,7 +4,7 @@ import * as React from "react"
 import { SearchCommand } from "@/components/search-command"
 import { searchUsers } from '@/app/actions/actions'
 import { User } from "../actions/schemas"
-import UserActions from '@/app/components/user-actions'
+import UserActions from './user-actions'
 
 export default function SearchInput() {
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
@@ -12,7 +12,12 @@ export default function SearchInput() {
   const handleSearch = React.useCallback(async (value: string) => {
     try {
       const users = await searchUsers(value)
-      return users
+      return users.map(user => ({
+        ...user,
+        name: user.name ?? "",
+        email: user.email ?? "",
+        phoneNumber: user.phoneNumber ?? "",
+      }))
     } catch (error) {
       console.error('Error searching users:', error)
       return []
@@ -43,7 +48,7 @@ export default function SearchInput() {
           <p><strong>Name:</strong> {selectedUser.name}</p>
           <p><strong>Email:</strong> {selectedUser.email}</p>
           <p><strong>Phone:</strong> {selectedUser.phoneNumber}</p>
-          <UserActions user={selectedUser} />
+          <UserActions userId={selectedUser.id} />
         </div>
       )}
     </div>

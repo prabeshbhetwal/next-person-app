@@ -49,10 +49,9 @@ export const authConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
-        // Add token data to session
-        session.user.id = token.id as string
-        session.user.name = token.name as string | null
-        session.user.email = token.email as string | null
+        // Add token data to session        session.user.id = token.id as string
+        session.user.name = (token.name as string) ?? ''
+        session.user.email = (token.email as string) ?? ''
       }
       return session
     },

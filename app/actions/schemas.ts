@@ -2,9 +2,6 @@
 
 import { z } from 'zod'
 
-const MAX_FILE_SIZE = 5000000 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-
 export const userSchema = z.object({
   id: z.string(),
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
