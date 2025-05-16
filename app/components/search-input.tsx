@@ -1,46 +1,51 @@
-'use client';
+'use client'
 
-import React, { useCallback } from 'react';
-import AsyncSelect from 'react-select/async';
-import { searchUsers } from '@/app/actions/actions';
+import * as React from "react"
+import { SearchCommand } from "@/components/search-command"
+import { searchUsers } from '@/app/actions/actions'
+import { User } from "../actions/schemas"
+import UserActions from '@/app/components/user-actions'
 
 export default function SearchInput() {
-    const loadOptions = async (inputValue: string) => {
-        const users = await searchUsers(inputValue);
-        return users.map(user => ({
-            value: user.id,
-            label: user.name,
-        }));
-    };
+  const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
 
-    const handleChange = useCallback((option: { value: string } | null) => {
-        const userId = option?.value || null;
+  const handleSearch = React.useCallback(async (value: string) => {
+    try {
+      const users = await searchUsers(value)
+      return users
+    } catch (error) {
+      console.error('Error searching users:', error)
+      return []
+    }
+  }, [])
 
-        // Update the URL to reflect the selected user ID
-        const url = new URL(window.location.href);
-        if (userId) {
-            url.searchParams.set('userId', userId);
-        } else {
-            url.searchParams.delete('userId');
-        }
-        window.history.pushState({}, '', url.toString());
-        window.location.reload(); // Ensure server re-render
-    }, []);
+  const handleSelect = React.useCallback((user: User) => {
+    // Update URL
+    const url = new URL(window.location.href)
+    url.searchParams.set('userId', user.id)
+    window.history.pushState({}, '', url.toString())
+    setSelectedUser(user)
+  }, [])
 
-    return (
-
-        <div
-            suppressHydrationWarning
-            className="w-full max-w-md mx-auto"
-        >
-            <AsyncSelect
-                instanceId="user-search"
-                cacheOptions={false}
-                loadOptions={loadOptions}
-                onChange={handleChange}
-                placeholder="Search for a user..."
-            />
+  return (
+    <div className="w-full max-w-md mx-auto">
+      <SearchCommand<User>
+        onSearch={handleSearch}
+        onItemSelect={handleSelect}
+        getItemId={(user) => user.id}
+        getItemLabel={(user) => user.name}
+        placeholder="Search users..."
+        noResultsText="No users found."
+      />
+      {selectedUser && (
+        <div className="mt-4">
+          <h2 className="text-lg font-bold">User Details</h2>
+          <p><strong>Name:</strong> {selectedUser.name}</p>
+          <p><strong>Email:</strong> {selectedUser.email}</p>
+          <p><strong>Phone:</strong> {selectedUser.phoneNumber}</p>
+          <UserActions user={selectedUser} />
         </div>
-
-    );
+      )}
+    </div>
+  )
 }

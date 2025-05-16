@@ -9,9 +9,13 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { UserFormData } from '../actions/schemas'
+import { useState } from 'react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Label } from '@/components/ui/label'
 
 
 interface FormComponentProps {
@@ -19,68 +23,104 @@ interface FormComponentProps {
 }
 
 export function UserForm({ form }: FormComponentProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64String = reader.result as string
+        setPreviewUrl(base64String)
+        form.setValue('picture', base64String)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
     <Form {...form}>
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field, fieldState }) => (
-          <FormItem>
-            <FormLabel>Name</FormLabel>
-            <FormControl>
-              <Input placeholder="John Doe" {...field} />
-            </FormControl>
-            <FormDescription>
-              Enter full name.
-            </FormDescription>
-            {fieldState.error && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {String(fieldState.error) || ''}
-                            </p>
-                        ) }
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="email"
-        render={({ field, fieldState }) => (
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl>
-              <Input type="email" placeholder="john@example.com" {...field} />
-            </FormControl>
-            <FormDescription>
-              Enter email address.
-            </FormDescription>
-            {fieldState.error && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {String(fieldState.error) || ''}
-                            </p>
-                        ) }
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name="phoneNumber"
-        render={({ field, fieldState }) => (
-          <FormItem>
-            <FormLabel>Phone Number</FormLabel>
-            <FormControl>
-              <Input placeholder="04xxxxxxxx" {...field} />
-            </FormControl>
-            <FormDescription>
-              Enter phone number in Australian phone number format.
-            </FormDescription>
-            {fieldState.error && (
-                            <p className="text-red-600 text-sm mt-1">
-                                {String(fieldState.error) || ''}
-                            </p>
-                        ) }
-          </FormItem>
-        )}
-      />
+      <div className="grid gap-4 py-2">
+        <FormField
+          control={form.control}
+          name="picture"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Profile Picture</FormLabel>
+              <FormControl>
+                <div className="flex flex-col items-center gap-4">
+                  <Avatar className="h-24 w-24">
+                    {(previewUrl || field.value) && (
+                      <AvatarImage src={previewUrl || field.value} alt="Preview" />
+                    )}
+                    <AvatarFallback>Add</AvatarFallback>
+                  </Avatar>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="picture" className="cursor-pointer text-center text-sm text-muted-foreground hover:text-primary">
+                      Upload Photo
+                    </Label>
+                    <Input
+                      id="picture"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+                  </div>
+                </div>
+              </FormControl>
+              <FormDescription>
+                Upload a profile picture (optional)
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John Smith" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="example@email.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="0422018632" {...field} />
+              </FormControl>
+              <FormDescription>
+                Must be a valid Australian mobile number (e.g., 0422018632)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </Form>
   )
 }

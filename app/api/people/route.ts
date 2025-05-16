@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { User } from '@/app/actions/schemas'
-import { searchUsers } from '@/app/actions/actions'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -11,7 +10,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const users: User[] = await searchUsers(query)
+    // Search users by name, email, or phoneNumber (case-insensitive)
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } },
+          { phoneNumber: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+    })
 
     if (users.length === 0) {
       return NextResponse.json({ message: 'No users found' }, { status: 404 })

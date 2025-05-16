@@ -1,29 +1,80 @@
-// components/user-card.tsx
+'use client'
+
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Phone, Mail } from 'lucide-react'
 import { User } from '@/app/actions/schemas'
-import DeleteButton from './delete-button'
-// import { UserEditDialog } from './user-edit-dialog'
+import { UserDialogForm } from './user-dialog-form'
+import { deleteUser } from '../actions/actions'
+import { useToast } from '@/hooks/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface UserCardProps {
   user: User
+  onDelete?: () => void
+  onUpdate?: (updatedUser: User) => void
 }
 
-console.log("UserCard module loaded");
+export default function UserCard({ user, onDelete, onUpdate }: UserCardProps) {
+  const { toast } = useToast()
 
-export default function UserCard({ user }: UserCardProps) {
   if (!user || !user.name) {
-    console.error("UserCard: Invalid user object", user);
     return <p>Error: Invalid user data</p>;
   }
 
+  const handleDelete = async () => {
+    try {
+      const result = await deleteUser(user.id)
+      if (!result.success) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error || 'Failed to delete user'
+        })
+        return
+      }
+
+      toast({
+        title: "Success",
+        description: "User deleted successfully"
+      })
+
+      if (onDelete) {
+        onDelete()
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to delete user'
+      })
+    }
+  }
+
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="flex flex-row items-center gap-4">
+    <Card className="w-full max-w-md mx-auto">      <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="w-16 h-16">
-          <AvatarFallback>{user.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>
+          {user.picture ? (
+            <img 
+              src={user.picture} 
+              alt={user.name}
+              className="aspect-square h-full w-full object-cover"
+            />
+          ) : (
+            <AvatarFallback>{user.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>
+          )}
         </Avatar>
         <div className="flex flex-col">
           <CardTitle className="text-2xl">{user.name}</CardTitle>
@@ -42,9 +93,30 @@ export default function UserCard({ user }: UserCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between items-center">
-        <DeleteButton userId={user.id} />
-        {/* <UserEditDialog user={user} /> */}
+      <CardFooter className="flex justify-end gap-2">
+        <UserDialogForm 
+          mode="edit" 
+          user={user}
+          onSuccess={onUpdate}
+          trigger={<Button variant="secondary">Edit</Button>}
+        />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">Delete</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {user.name}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );

@@ -2,12 +2,15 @@
 'use client'
 
 import Link from 'next/link';
-import { Search, Moon, Sun } from 'lucide-react';
+import { Search, Moon, Sun, User, LogOut } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from "@/components/ui/button";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
 
   return (
     <nav className="bg-background shadow-md">
@@ -19,21 +22,48 @@ export default function Navbar() {
               <span className="ml-2 text-lg font-semibold text-foreground">Person Search</span>
             </Link>
           </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
-              Home
-            </Link>
-            <Link href="/about" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
-              About
-            </Link>
+          
+          <div className="flex items-center gap-4">
+            {status === 'loading' ? (
+              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+            ) : session?.user ? (
+              <div className="flex items-center gap-4">
+                <Avatar>
+                  <AvatarFallback>{session.user.name?.[0] ?? 'U'}</AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:inline text-sm font-medium text-foreground">
+                  {session.user.name}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  title="Sign Out"
+                  onClick={() => signOut()}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                onClick={() => signIn('google')}
+                className="flex items-center gap-2"
+              >
+                <User className="h-5 w-5" />
+                <span>Sign In</span>
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>

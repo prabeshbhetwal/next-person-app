@@ -3,66 +3,115 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { prisma } from '../../lib/prisma'
 import { User, userSchema } from './schemas'
 import { cache } from 'react'
 
-const users: User[] = [
-    { id: '1', name: 'John Doe', phoneNumber: '0412345678', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', phoneNumber: '0423456789', email: 'jane@example.com' },
-    { id: '3', name: 'Alice Johnson', phoneNumber: '0434567890', email: 'alice@example.com' },
-    { id: '4', name: 'Bob Williams', phoneNumber: '0445678901', email: 'bob@example.com' },
-    { id: '5', name: 'Charlie Brown', phoneNumber: '0456789012', email: 'charlie@example.com' },
-    { id: '6', name: 'Emily Davis', phoneNumber: '0467890123', email: 'emily@example.com' },
-    { id: '7', name: 'Frank Miller', phoneNumber: '0478901234', email: 'frank@example.com' },
-    { id: '8', name: 'Grace Lee', phoneNumber: '0489012345', email: 'grace@example.com' },
-    { id: '9', name: 'Henry Moore', phoneNumber: '0490123456', email: 'henry@example.com' },
-    { id: '10', name: 'Isabella Young', phoneNumber: '0401234567', email: 'isabella@example.com' },
-]
+export const searchUsers = cache(async (query: string) => {
+  // Handle empty query case
+  if (!query) {
+    return []
+  }
 
-export async function searchUsers(query: string): Promise<User[]> {
-    console.log('Searching users with query:', query)
-    const results = users.filter(user => user.name.toLowerCase().startsWith(query.toLowerCase()))
-    console.log('Search results:', results)
-    return results
-}
+  return prisma.user.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { email: { contains: query, mode: 'insensitive' } },
+        { phoneNumber: { contains: query, mode: 'insensitive' } },
+      ],
+    },
+    // Return limited fields to reduce payload size
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phoneNumber: true,
+    },
+  })
+})
 
-export async function addUser(data: Omit<User, 'id'>): Promise<User> {
-    const newId = crypto.randomUUID();
-    const newUser = { ...data, id: newId }
-    const validatedUser = userSchema.parse(newUser)
-    users.push(validatedUser)
-    return validatedUser
-}
-
-export async function deleteUser(id: string): Promise<void> {
-    const index = users.findIndex(user => user.id === id)
-    if (index === -1) {
-        throw new Error(`User with id ${id} not found`)
-    }
-    users.splice(index, 1)
-    console.log(`User with id ${id} has been deleted.`)
-    revalidatePath('/') // Revalidate the page or component path
-
-}
-
-export async function updateUser(id: string, data: Partial<Omit<User, 'id'>>): Promise<User> {
-    const index = users.findIndex(user => user.id === id)
-    if (index === -1) {
-        throw new Error(`User with id ${id} not found`)
+export async function addUser(data: Omit<User, 'id'>): Promise<{ success: boolean; data?: User; error?: string }> {
+  try {
+    // Validate data with schema
+    const validatedUser = userSchema.parse({ ...data, id: crypto.randomUUID() })
+    
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: validatedUser.email },
+    })
+    
+    if (existingUser) {
+      return { success: false, error: 'Email already exists' }
     }
 
-    const existingUser = users[index]
-    const updatedUser = { ...existingUser, ...data }
-    const validatedUser = userSchema.parse(updatedUser) // Ensure the updated data adheres to schema
+    const user = await prisma.user.create({
+      data: {
+        name: validatedUser.name,
+        email: validatedUser.email,
+        phoneNumber: validatedUser.phoneNumber,
+      },
+    })
+    
+    revalidatePath('/')
+    return { success: true, data: user }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create user' 
+    }
+  }
+}
 
-    users[index] = validatedUser
-    console.log(`User with id ${id} has been updated.`)
-    revalidatePath('/') // Revalidate the page or component path
+export async function deleteUser(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await prisma.user.delete({ where: { id } })
+    revalidatePath('/')
+    return { success: true }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to delete user' 
+    }
+  }
+}
 
-    return validatedUser
+export async function updateUser(
+  id: string, 
+  data: Partial<Omit<User, 'id'>>
+): Promise<{ success: boolean; data?: User; error?: string }> {
+  try {
+    // If email is being updated, check if it already exists
+    if (data.email) {
+      const existingUser = await prisma.user.findFirst({
+        where: { 
+          AND: [
+            { email: data.email },
+            { id: { not: id } }
+          ]
+        }
+      })
+      
+      if (existingUser) {
+        return { success: false, error: 'Email already exists' }
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data,
+    })
+    
+    revalidatePath('/')
+    return { success: true, data: user }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to update user' 
+    }
+  }
 }
 
 export const getUserById = cache(async (id: string) => {
-    const user = users.find(user => user.id === id)
-    return user || null
+  return prisma.user.findUnique({ where: { id } })
 })

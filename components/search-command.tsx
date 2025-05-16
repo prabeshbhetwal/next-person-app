@@ -30,10 +30,14 @@ export interface SearchCommandProps<T> {
   getItemId: (item: T) => string
   /** Function to get the display label from an item */
   getItemLabel: (item: T) => string
+  /** Function to get the description text for an item */
+  getItemDescription?: (item: T) => string
   /** Placeholder text for the search input */
   placeholder?: string
   /** Text to display when no results are found */
   noResultsText?: string
+  /** Additional CSS classes to apply to the root element */
+  className?: string
 }
 
 /**
@@ -104,8 +108,10 @@ export const SearchCommand = <T,>({
   onItemSelect,
   getItemId,
   getItemLabel,
+  getItemDescription,
   placeholder = "Search...",
   noResultsText = "No results found.",
+  className,
 }: SearchCommandProps<T>) => {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<T[]>([])
@@ -150,7 +156,7 @@ export const SearchCommand = <T,>({
         <PopoverTrigger asChild>
           <div>
             <Command 
-              className="rounded-lg border shadow-md"
+              className={cn("rounded-lg border shadow-md", className)}
               shouldFilter={false}
             >
               <CommandInput 
@@ -190,6 +196,7 @@ export const SearchCommand = <T,>({
                         value={getItemId(item)}
                         onSelect={() => handleSelect(item)}
                         onMouseMove={() => inputRef.current?.focus()}
+                        className="flex items-center gap-2 px-4 py-2"
                       >
                         <Check
                           className={cn(
@@ -197,7 +204,14 @@ export const SearchCommand = <T,>({
                             selectedItem && getItemId(selectedItem) === getItemId(item) ? "opacity-100" : "opacity-0"
                           )}
                         />
-                        {getItemLabel(item)}
+                        <div className="flex-1 overflow-hidden">
+                          <div className="font-medium">{getItemLabel(item)}</div>
+                          {getItemDescription && (
+                            <div className="text-sm text-muted-foreground truncate">
+                              {getItemDescription(item)}
+                            </div>
+                          )}
+                        </div>
                       </CommandItem>
                     ))
                   )}
@@ -208,6 +222,6 @@ export const SearchCommand = <T,>({
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }
 

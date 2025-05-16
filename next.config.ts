@@ -3,6 +3,8 @@ import path from 'path';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  swcMinify: true,
+  output: 'standalone', // Optimizes for production deployment
   experimental: {
     // Enable turbo for both dev and build
     turbo: {
@@ -26,15 +28,11 @@ const nextConfig: NextConfig = {
   },
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
-    // !! WARN !!
+    // Handle any TypeScript compilation errors
     ignoreBuildErrors: false,
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    // Handle any ESLint errors during build
     ignoreDuringBuilds: false,
   },
 };
