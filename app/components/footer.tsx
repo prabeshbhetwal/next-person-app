@@ -14,7 +14,7 @@ export default function Footer() {
 						About
 					</Link>
 				</nav>
-				<span className="text-xs">Jasha &copy; {currentYear}. All rights reserved.</span>
+				<span className="text-xs">Jashandeep &copy; {currentYear}. All rights reserved.</span>
 			</div>
 		</footer>
 	);
